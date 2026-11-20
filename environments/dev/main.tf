@@ -63,3 +63,12 @@ module "storage" {
 
   depends_on = [google_project_service.storage_api]
 }
+
+data "vault_kv_secret_v2" "gcp_config" {
+  mount = "secret"
+  name  = "gcp-config"
+}
+
+locals {
+  vault_secret_key = data.vault_kv_secret_v2.gcp_config.data["app_env_label"]
+}
