@@ -1,0 +1,91 @@
+﻿name: Terraform CI/CD
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target environment to plan/apply (dev or prod)"
+        required: true
+        default: "dev"
+        type: choice
+        options:
+          - dev
+          - prod
+      run_apply:
+        description: "Run controlled terraform apply?"
+        required: true
+        default: false
+        type: boolean
+
+env:
+  TF_IN_AUTOMATION: "true"
+
+jobs:
+  fmt-and-validate:
+    name: Format & Validate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.9.8
+
+      - name: Terraform Format Check
+        run: terraform fmt -check -recursive
+
+      - name: Terraform Init & Validate (Dev)
+        working-directory: environments/dev
+        run: |
+          terraform init -backend=false
+          terraform validate
+
+      - name: Terraform Init & Validate (Prod)
+        working-directory: environments/prod
+        run: |
+          terraform init -backend=false
+          terraform validate
+
+  plan-and-controlled-apply:
+    name: Remote Plan & Controlled Apply
+    needs: fmt-and-validate
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment || 'dev' }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.9.8
+          cli_config_credentials_token: ${{ secrets.TF_API_TOKEN }}
+
+      - name: Determine Target Env
+        id: env_select
+        run: |
+          TARGET_ENV="${{ inputs.environment }}"
+          if [ -z "$TARGET_ENV" ]; then
+            TARGET_ENV="dev"
+          fi
+          echo "env=$TARGET_ENV" >> $GITHUB_OUTPUT
+          echo "dir=environments/$TARGET_ENV" >> $GITHUB_OUTPUT
+
+      - name: Terraform Init (Remote HCP)
+        working-directory: ${{ steps.env_select.outputs.dir }}
+        run: terraform init
+
+      - name: Terraform Plan
+        working-directory: ${{ steps.env_select.outputs.dir }}
+        run: terraform plan
+
+      - name: Controlled Terraform Apply
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_apply == true }}
+        working-directory: ${{ steps.env_select.outputs.dir }}
+        run: terraform apply -auto-approve
