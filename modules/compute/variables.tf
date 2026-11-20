@@ -1,4 +1,4 @@
-﻿variable "instance_name" {
+variable "instance_name" {
   description = "Name of the Compute Engine VM"
   type        = string
 }

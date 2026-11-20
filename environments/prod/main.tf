@@ -1,4 +1,4 @@
-﻿locals {
+locals {
   env = "prod"
 }
 

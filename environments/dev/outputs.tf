@@ -1,4 +1,4 @@
-﻿output "dev_vpc_name" {
+output "dev_vpc_name" {
   description = "Name of the dev VPC"
   value       = module.network.vpc_name
 }

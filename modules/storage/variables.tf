@@ -1,4 +1,4 @@
-﻿variable "bucket_name" {
+variable "bucket_name" {
   description = "Globally unique GCS bucket name"
   type        = string
 }

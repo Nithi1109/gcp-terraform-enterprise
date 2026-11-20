@@ -1,4 +1,4 @@
-﻿output "vm_name" {
+output "vm_name" {
   description = "VM instance name"
   value       = google_compute_instance.vm.name
 }

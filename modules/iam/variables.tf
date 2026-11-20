@@ -1,4 +1,4 @@
-﻿variable "account_id" {
+variable "account_id" {
   description = "Service account ID"
   type        = string
 }
