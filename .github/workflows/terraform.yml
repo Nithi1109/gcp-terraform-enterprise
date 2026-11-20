@@ -26,7 +26,7 @@ env:
 
 jobs:
   fmt-and-validate:
-    name: Format & Validate
+    name: Format, Validate & Policy Check
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -51,6 +51,19 @@ jobs:
         run: |
           terraform init -backend=false
           terraform validate
+
+      - name: Setup Conftest (OPA Policy Engine)
+        run: |
+          CONFTEST_VERSION="0.55.0"
+          curl -sL "https://github.com/open-policy-agent/conftest/releases/download/v${CONFTEST_VERSION}/conftest_${CONFTEST_VERSION}_Linux_x86_64.tar.gz" | tar xz
+          sudo mv conftest /usr/local/bin/conftest
+          conftest --version
+
+      - name: OPA Policy Validation (Dev, Prod & Modules)
+        run: |
+          conftest test --policy policies/gcp.rego environments/dev
+          conftest test --policy policies/gcp.rego environments/prod
+          conftest test --policy policies/gcp.rego modules
 
   plan-and-controlled-apply:
     name: Remote Plan & Controlled Apply
