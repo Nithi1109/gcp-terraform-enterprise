@@ -105,9 +105,15 @@ jobs:
 
       - name: Terraform Plan
         working-directory: ${{ steps.env_select.outputs.dir }}
+        env:
+          VAULT_ADDR: ${{ secrets.VAULT_ADDR }}
+          VAULT_TOKEN: ${{ secrets.VAULT_TOKEN }}
         run: terraform plan
 
       - name: Controlled Terraform Apply
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_apply == true }}
         working-directory: ${{ steps.env_select.outputs.dir }}
+        env:
+          VAULT_ADDR: ${{ secrets.VAULT_ADDR }}
+          VAULT_TOKEN: ${{ secrets.VAULT_TOKEN }}
         run: terraform apply -auto-approve
